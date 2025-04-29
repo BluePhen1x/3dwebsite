@@ -68,8 +68,9 @@ def process_text():
 
     response_data = {
             "status" : "success",
-            "received_text": "input.txt",
-            "message": "Text recived, processing logic not implemented"     #part where we add skills
+            "received_text": input_text,
+            "message": "Text recived, processing logic not implemented",     #part where we add skills
+            "skills_found": list(found_skills)
     }
 
     return jsonify(response_data), 200 #ok code is 200 -----------------IMP
