@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Extractor</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        textarea { width: 80%; min-height: 150px; margin-bottom: 10px; display: block; }
+        button { padding: 10px 15px; cursor: pointer; }
+        #results { margin-top: 20px; border: 1px solid #ccc; padding: 10px; min-height: 50px; background-color: #f9f9f9; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <h1>Enter Text to Extract Skills</h1>
+
+    <textarea id="inputText" placeholder="Paste your text here..."></textarea>
+    <button id="submitBtn">Extract Skills</button>
+
+    <h2>Results:</h2>
+    <div id="results">
+        </div>
+
+    <script>
+        const inputTextElem = document.getElementById('inputText');
+        const submitBtnElem = document.getElementById('submitBtn');
+        const resultsElem = document.getElementById('results');
+
+        // Add event listener to the button
+        submitBtnElem.addEventListener('click', async () => {
+            const textToProcess = inputTextElem.value;
+            resultsElem.innerHTML = 'Processing...'; // Show feedback
+
+            // Prepare the data to send in JSON format
+            const payload = {
+                text: textToProcess
+            };
+
+            try {
+                // Send POST request to the Flask API endpoint
+                const response = await fetch('/process', { // Relative URL works if HTML served by Flask
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload) // Convert JS object to JSON string
+                });
+
+                // Check if the request was successful (status code 2xx)
+                if (response.ok) {
+                    const data = await response.json(); // Parse the JSON response body
+
+                    // Display the results
+                    if (data.skills_found && data.skills_found.length > 0) {
+                        let skillsHtml = '<strong>Skills Found:</strong><ul>';
+                        data.skills_found.forEach(skill => {
+                            skillsHtml += `<li>${skill}</li>`;
+                        });
+                        skillsHtml += '</ul>';
+                        resultsElem.innerHTML = skillsHtml;
+                    } else {
+                        resultsElem.innerHTML = 'No skills from the list were found.';
+                    }
+                } else {
+                    // Handle HTTP errors (like 400 Bad Request, 500 Internal Server Error)
+                    const errorData = await response.json(); // Try to get error details
+                    resultsElem.innerHTML = `<span class="error">Error: ${response.status} - ${errorData.error || 'Failed to process request'}</span>`;
+                }
+            } catch (error) {
+                // Handle network errors or other issues with the fetch call
+                console.error("Fetch error:", error);
+                resultsElem.innerHTML = '<span class="error">Error: Could not connect to the server or process the request.</span>';
+            }
+        });
+    </script>
+
+</body>
+</html>
